@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FacebookMediaGUI</class>
+ <widget class="QMainWindow" name="FacebookMediaGUI">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Facebook Media Gather</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="centralLayout">
+    <item>
+     <widget class="QTabWidget" name="tabs">
+      <property name="currentIndex">
+       <number>3</number>
+      </property>
+      <widget class="QWidget" name="face_detection_tab">
+       <attribute name="title">
+        <string>Face Detection</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="fdMainLayout">
+        <item>
+         <widget class="QGroupBox" name="fdDirsGroup">
+          <property name="title">
+           <string>Directory Selection</string>
+          </property>
+          <layout class="QGridLayout" name="fdDirsLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="fdSrcLabel">
+             <property name="text">
+              <string>Source Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="src_dir_edit"/>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="fdSrcBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="fdDestLabel">
+             <property name="text">
+              <string>Destination Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="dest_dir_edit"/>
+           </item>
+           <item row="1" column="2">
+            <widget class="QPushButton" name="fdDestBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="fdConfigGroup">
+          <property name="title">
+           <string>Configuration</string>
+          </property>
+          <layout class="QGridLayout" name="fdConfigLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="minFacesLabel">
+             <property name="text">
+              <string>Minimum Faces:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="min_faces_spin">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>20</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="threadsLabel">
+             <property name="text">
+              <string>Thread Count:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="threads_spin">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>32</number>
+             </property>
+             <property name="value">
+              <number>8</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="processingModeLabel">
+             <property name="text">
+              <string>Processing Mode:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="fdModeValueLabel">
+             <property name="text">
+              <string>CPU — thread pool</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0" colspan="2">
+            <widget class="QCheckBox" name="prevent_dup_check">
+             <property name="text">
+              <string>Prevent Duplication</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="fdProgressGroup">
+          <property name="title">
+           <string>Progress</string>
+          </property>
+          <layout class="QVBoxLayout" name="fdProgressLayout">
+           <item>
+            <widget class="QProgressBar" name="fd_progress_bar">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="fdStatusLayout">
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Processed:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="processed_label">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Copied:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="copied_label">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Errors:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="errors_label">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="fdLogGroup">
+          <property name="title">
+           <string>Log</string>
+          </property>
+          <layout class="QVBoxLayout" name="fdLogLayout">
+           <item>
+            <widget class="QTextEdit" name="fd_log_text">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="fdBtnLayout">
+          <item>
+           <widget class="QPushButton" name="fd_start_btn">
+            <property name="text">
+             <string>Start Processing</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="fd_cancel_btn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Cancel</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="file_transfer_tab">
+       <attribute name="title">
+        <string>File Transfer</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="ftMainLayout">
+        <item>
+         <widget class="QGroupBox" name="ftDirsGroup">
+          <property name="title">
+           <string>Directory Selection</string>
+          </property>
+          <layout class="QGridLayout" name="ftDirsLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="fbSrcLabel">
+             <property name="text">
+              <string>Facebook Data Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="fb_src_dir_edit">
+             <property name="placeholderText">
+              <string>Select the Facebook messages directory</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="fbSrcBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="fbDestLabel">
+             <property name="text">
+              <string>Destination Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="fb_dest_dir_edit">
+             <property name="placeholderText">
+              <string>Select where to copy media files</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QPushButton" name="fbDestBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="fileTypesGroup">
+          <property name="title">
+           <string>File Types to Include</string>
+          </property>
+          <layout class="QHBoxLayout" name="fileTypesLayout">
+           <item>
+            <widget class="QCheckBox" name="include_images_check">
+             <property name="text">
+              <string>Images (JPG, PNG)</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="include_videos_check">
+             <property name="text">
+              <string>Videos (MP4)</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="include_gifs_check">
+             <property name="text">
+              <string>GIFs</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="idsGroup">
+          <property name="title">
+           <string>Conversation IDs</string>
+          </property>
+          <layout class="QVBoxLayout" name="idsLayout">
+           <item>
+            <widget class="QListWidget" name="conversation_list"/>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="idBtnsLayout">
+             <item>
+              <widget class="QPushButton" name="addIdBtn">
+               <property name="text">
+                <string>Add ID</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="removeIdBtn">
+               <property name="text">
+                <string>Remove Selected</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="loadIdsBtn">
+               <property name="text">
+                <string>Load IDs from File</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="saveIdsBtn">
+               <property name="text">
+                <string>Save IDs to File</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="ftProgressGroup">
+          <property name="title">
+           <string>Progress</string>
+          </property>
+          <layout class="QVBoxLayout" name="ftProgressLayout">
+           <item>
+            <widget class="QProgressBar" name="transfer_progress_bar">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTextEdit" name="transfer_log">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="ftBtnLayout">
+          <item>
+           <widget class="QPushButton" name="transfer_start_btn">
+            <property name="text">
+             <string>Start Transfer</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="transfer_cancel_btn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Cancel</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="hash_files_tab">
+       <attribute name="title">
+        <string>Hash &amp; Compare Files</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="hashMainLayout">
+        <item>
+         <widget class="QGroupBox" name="hashDirsGroup">
+          <property name="title">
+           <string>Directory Selection</string>
+          </property>
+          <layout class="QGridLayout" name="hashDirsLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="hashSrcLabel">
+             <property name="text">
+              <string>Source Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="hash_src_dir_edit"/>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="hashSrcBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="hashTargetLabel">
+             <property name="text">
+              <string>Target Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="hash_target_dir_edit"/>
+           </item>
+           <item row="1" column="2">
+            <widget class="QPushButton" name="hashTargetBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="actionGroup">
+          <property name="title">
+           <string>Action</string>
+          </property>
+          <layout class="QVBoxLayout" name="actionLayout">
+           <item>
+            <widget class="QComboBox" name="hash_action_combo">
+             <item>
+              <property name="text">
+               <string>Calculate hashes and find matches</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Rename target files to match source files</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="hashProgressGroup">
+          <property name="title">
+           <string>Progress</string>
+          </property>
+          <layout class="QVBoxLayout" name="hashProgressLayout">
+           <item>
+            <widget class="QProgressBar" name="hash_progress_bar">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTextEdit" name="hash_log">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="hashBtnLayout">
+          <item>
+           <widget class="QPushButton" name="hash_start_btn">
+            <property name="text">
+             <string>Start Processing</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="hash_cancel_btn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Cancel</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="rename_images_tab">
+       <attribute name="title">
+        <string>Rename Images</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="renameMainLayout">
+        <item>
+         <widget class="QGroupBox" name="renameDirsGroup">
+          <property name="title">
+           <string>Directory Selection</string>
+          </property>
+          <layout class="QGridLayout" name="renameDirsLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="renameSrcLabel">
+             <property name="text">
+              <string>Source Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="rename_src_dir_edit">
+             <property name="placeholderText">
+              <string>Select source directory</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="renameSrcBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="renameDestLabel">
+             <property name="text">
+              <string>Destination Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="rename_dest_dir_edit">
+             <property name="placeholderText">
+              <string>Select destination directory (or same as source)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QPushButton" name="renameDestBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="3">
+            <widget class="QCheckBox" name="rename_same_dir_check">
+             <property name="text">
+              <string>Use same directory as source (rename in place)</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="renameOperationGroup">
+          <property name="title">
+           <string>Operation Mode</string>
+          </property>
+          <layout class="QVBoxLayout" name="renameOperationLayout">
+           <item>
+            <widget class="QLabel" name="renameOperationHint">
+             <property name="text">
+              <string>When source and destination are the same, choose how to handle files:</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="renameRadioLayout">
+             <item>
+              <widget class="QRadioButton" name="rename_inplace_radio">
+               <property name="text">
+                <string>Rename file (in place)</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="rename_copy_radio">
+               <property name="text">
+                <string>Copy and rename (keep original)</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="renamePatternGroup">
+          <property name="title">
+           <string>Rename Pattern</string>
+          </property>
+          <layout class="QGridLayout" name="renamePatternLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="renamePrefixLabel">
+             <property name="text">
+              <string>Prefix:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="rename_prefix_edit">
+             <property name="placeholderText">
+              <string>e.g. photo_ (optional)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="renameStartIndexLabel">
+             <property name="text">
+              <string>Start Index:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="rename_start_index_spin">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>999999</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="renamePaddingLabel">
+             <property name="text">
+              <string>Number Padding:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="rename_padding_spin">
+             <property name="toolTip">
+              <string>e.g. padding 4 → 0001, 0002...</string>
+             </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>4</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="renamePreviewLabel">
+             <property name="text">
+              <string>Preview:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLabel" name="rename_preview_label">
+             <property name="text">
+              <string>photo_0001.jpg, photo_0002.jpg ...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="renameProgressGroup">
+          <property name="title">
+           <string>Progress</string>
+          </property>
+          <layout class="QVBoxLayout" name="renameProgressLayout">
+           <item>
+            <widget class="QProgressBar" name="rename_progress_bar">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTextEdit" name="rename_log">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="renameBtnLayout">
+          <item>
+           <widget class="QPushButton" name="rename_start_btn">
+            <property name="text">
+             <string>Start Renaming</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="rename_cancel_btn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Cancel</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
