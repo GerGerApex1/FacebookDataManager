@@ -116,6 +116,7 @@ def _copy_recursive(
 
     Qualifying files are copied with :func:`shutil.copyfile` and their hash
     is added to *processed_hashes*.  Stat counters are incremented in *stats*.
+    Folder structure is preserved during copying.
     """
     try:
         for item in folder.rglob("*"):
@@ -140,8 +141,17 @@ def _copy_recursive(
                 progress_callback(-1, f"[DUP] {item.name}", "count")
                 continue
 
-            # --- Copy to unique destination ---
-            dest_path = _unique_dest(dest_dir, item.name)
+            # --- Preserve folder structure ---
+            relative_path = item.relative_to(folder)
+            dest_subdir = dest_dir / relative_path.parent
+            try:
+                dest_subdir.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                progress_callback(-1, f"[ERR] Cannot create folder structure: {exc}", "count")
+                continue
+
+            # --- Copy to unique destination with folder structure ---
+            dest_path = _unique_dest(dest_subdir, item.name)
             try:
                 shutil.copyfile(item, dest_path)
                 processed_hashes.add(digest)
@@ -265,8 +275,17 @@ def transfer_files(
             progress_callback(-1, "Cancelled by user.", "count")
             break
         progress_callback(-1, f"Processing folder: {folder.name}", "count")
+        
+        # Create a folder for this conversation
+        conv_dest = dst / folder.name
+        try:
+            conv_dest.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            progress_callback(-1, f"[ERR] Cannot create conversation folder: {exc}", "count")
+            continue
+        
         _copy_recursive(
-            folder, dst, include_types, processed_hashes,
+            folder, conv_dest, include_types, processed_hashes,
             stats, progress_callback, is_cancelled,
         )
 

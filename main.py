@@ -28,7 +28,7 @@ logging.basicConfig(
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
     QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QHeaderView, QInputDialog,
     QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMessageBox,
-    QProgressBar, QPushButton, QRadioButton, QSizePolicy, QSpinBox,
+    QProgressBar, QPushButton, QRadioButton, QSizePolicy, QSlider, QSpinBox,
     QTabWidget, QTableWidget, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget)
 from modules import face_detection, rename_images, rename_videos, file_transfer
 
@@ -101,6 +101,20 @@ class Ui_FacebookMediaGUI(object):
 
         self.fdConfigLayout.addWidget(self.min_faces_spin, 0, 1, 1, 1)
 
+        self.maxFacesLabel = QLabel(self.fdConfigGroup)
+        self.maxFacesLabel.setObjectName(u"maxFacesLabel")
+        self.maxFacesLabel.setText("Max Faces:")
+
+        self.fdConfigLayout.addWidget(self.maxFacesLabel, 0, 2, 1, 1)
+
+        self.max_faces_spin = QSpinBox(self.fdConfigGroup)
+        self.max_faces_spin.setObjectName(u"max_faces_spin")
+        self.max_faces_spin.setMinimum(0)
+        self.max_faces_spin.setMaximum(20)
+        self.max_faces_spin.setValue(0)
+
+        self.fdConfigLayout.addWidget(self.max_faces_spin, 0, 3, 1, 1)
+
         self.threadsLabel = QLabel(self.fdConfigGroup)
         self.threadsLabel.setObjectName(u"threadsLabel")
 
@@ -130,6 +144,26 @@ class Ui_FacebookMediaGUI(object):
 
         self.fdConfigLayout.addWidget(self.prevent_dup_check, 3, 0, 1, 2)
 
+        self.confidenceLabel = QLabel(self.fdConfigGroup)
+        self.confidenceLabel.setObjectName(u"confidenceLabel")
+        self.confidenceLabel.setText("Confidence Level:")
+
+        self.fdConfigLayout.addWidget(self.confidenceLabel, 4, 0, 1, 1)
+
+        self.confidence_slider = QSlider(self.fdConfigGroup)
+        self.confidence_slider.setObjectName(u"confidence_slider")
+        self.confidence_slider.setMinimum(0)
+        self.confidence_slider.setMaximum(100)
+        self.confidence_slider.setValue(70)
+        self.confidence_slider.setOrientation(Qt.Horizontal)
+
+        self.fdConfigLayout.addWidget(self.confidence_slider, 4, 1, 1, 1)
+
+        self.confidence_value_label = QLabel(self.fdConfigGroup)
+        self.confidence_value_label.setObjectName(u"confidence_value_label")
+        self.confidence_value_label.setText("0.70")
+
+        self.fdConfigLayout.addWidget(self.confidence_value_label, 4, 2, 1, 1)
 
         self.fdMainLayout.addWidget(self.fdConfigGroup)
 
@@ -925,6 +959,7 @@ class MainWindow(QMainWindow):
         self.ui.fdDestBrowseBtn.clicked.connect(self._fd_browse_dest)
         self.ui.fd_start_btn.clicked.connect(self._fd_start)
         self.ui.fd_cancel_btn.clicked.connect(self._fd_cancel)
+        self.ui.confidence_slider.sliderMoved.connect(self._fd_update_confidence_label)
 
         # --- Rename Images tab connections ---
         self.ui.renameSrcBrowseBtn.clicked.connect(self._ri_browse_src)
@@ -976,6 +1011,11 @@ class MainWindow(QMainWindow):
         if directory:
             self.ui.dest_dir_edit.setText(directory)
 
+    def _fd_update_confidence_label(self):
+        """Update the confidence value label when slider moves."""
+        value = self.ui.confidence_slider.value() / 100.0
+        self.ui.confidence_value_label.setText(f"{value:.2f}")
+
     def _fd_start(self):
         src = self.ui.src_dir_edit.text().strip()
         dest = self.ui.dest_dir_edit.text().strip()
@@ -999,9 +1039,11 @@ class MainWindow(QMainWindow):
             src_dir=src,
             dest_dir=dest,
             min_faces=self.ui.min_faces_spin.value(),
+            max_faces=self.ui.max_faces_spin.value(),
             threads=self.ui.threads_spin.value(),
             use_gpu=face_detection.is_gpu_available(),
             prevent_duplicates=self.ui.prevent_dup_check.isChecked(),
+            confidence_level=self.ui.confidence_slider.value() / 100.0,
             parent=self,
         )
         self._fd_worker.progress.connect(self.ui.fd_progress_bar.setValue)

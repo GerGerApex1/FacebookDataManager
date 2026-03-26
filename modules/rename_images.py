@@ -429,7 +429,16 @@ class RenameImagesWorker(QThread):
             index    = self.start_index + idx_offset
             new_name = self._apply_template(index, date_str, thread_name) + suffix
 
-            dest_path = self._unique_dest(self.dest_dir, new_name, suffix)
+            # Preserve folder structure
+            try:
+                relative_path = src_path.relative_to(self.src_dir)
+                dest_subdir = self.dest_dir / relative_path.parent
+                dest_subdir.mkdir(parents=True, exist_ok=True)
+            except (ValueError, OSError) as exc:
+                logger.debug("Could not preserve folder structure: %s", exc)
+                dest_subdir = self.dest_dir
+
+            dest_path = self._unique_dest(dest_subdir, new_name, suffix)
 
             if not src_path.is_file():
                 msg = f"[SKIP] File not found on disk: {src_path}"

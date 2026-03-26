@@ -36,6 +36,7 @@ FaceDetectionWorker(QThread)
         threads=8,
         use_gpu=True,           # falls back to CPU if CUDA is unavailable
         prevent_duplicates=True,
+        confidence_level=0.7,   # 0.0 (lenient) to 1.0 (strict)
     )
     worker.progress.connect(progress_bar.setValue)
     worker.log.connect(log_widget.append)
@@ -56,9 +57,10 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+import cv2
 import torch
+from uniface.detection import RetinaFace
 from PIL import Image
-from facenet_pytorch import MTCNN
 from PySide6.QtCore import QThread, Signal
 
 logger = logging.getLogger(__name__)
@@ -140,6 +142,10 @@ class FaceDetectionWorker(QThread):
         Directory where qualifying images are copied.  Created automatically.
     min_faces:
         Minimum number of detected faces required to copy an image (≥ 1).
+    max_faces:
+        Maximum number of detected faces allowed to copy an image.
+        Set to 0 for unlimited. If set, only images with faces in the range
+        [min_faces, max_faces] are copied. Default is 0 (unlimited).
     threads:
         Number of parallel worker threads for CPU mode.  Ignored in GPU mode
         (GPU mode always uses a single thread to avoid CUDA context races).
@@ -149,6 +155,9 @@ class FaceDetectionWorker(QThread):
     prevent_duplicates:
         When ``True`` an MD5 hash is computed for each qualifying image and
         files identical to one already copied are skipped.
+    confidence_level:
+        Detection confidence threshold (0.0–1.0). Higher values are stricter,
+        resulting in fewer but more confident face detections. Default is 0.7.
     """
 
     # --- Signals ---
@@ -167,9 +176,11 @@ class FaceDetectionWorker(QThread):
         src_dir: str,
         dest_dir: str,
         min_faces: int = 1,
+        max_faces: int = 0,
         threads: int = 4,
         use_gpu: bool = False,
         prevent_duplicates: bool = True,
+        confidence_level: float = 0.7,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -177,8 +188,11 @@ class FaceDetectionWorker(QThread):
         self.src_dir  = Path(src_dir)
         self.dest_dir = Path(dest_dir)
         self.min_faces = max(1, min_faces)
+        self.max_faces = max(0, max_faces)  # 0 means unlimited
         self.threads   = max(1, threads)
         self.prevent_duplicates = prevent_duplicates
+        # Clamp confidence level to 0.0-1.0 range
+        self.confidence_level = max(0.0, min(1.0, confidence_level))
 
         # Resolve GPU availability at construction time
         if use_gpu and not is_gpu_available():
@@ -245,9 +259,11 @@ class FaceDetectionWorker(QThread):
             self.error.emit(f"Cannot create destination directory: {exc}")
             return
 
+        max_faces_str = f"max={self.max_faces}" if self.max_faces > 0 else "no limit"
         msg = (
             f"Found {total} image(s) | device={device.upper()} | "
-            f"min_faces={self.min_faces} | threads={self.threads}"
+            f"faces={self.min_faces}-{max_faces_str} | threads={self.threads} | "
+            f"confidence={self.confidence_level:.2f}"
         )
         logger.info(msg)
         self.log.emit(msg)
@@ -290,21 +306,21 @@ class FaceDetectionWorker(QThread):
                 logger.info(msg)
                 self.log.emit(msg)
 
-        # --- Thread-local MTCNN instances (one detector per OS thread) ---
+        # --- Thread-local RetinaFace instances (one detector per OS thread) ---
         # Using thread-local detectors avoids CUDA context races on multiple
         # GPU threads and avoids the GIL serialising CPU inference.
         _thread_local = threading.local()
 
-        def _get_detector() -> MTCNN:
-            if not hasattr(_thread_local, "mtcnn"):
-                _thread_local.mtcnn = MTCNN(
-                    keep_all=True,
-                    device=device,
-                    post_process=False,
-                    # Thresholds tuned for recall — adjust if needed
-                    thresholds=[0.6, 0.7, 0.7],
-                )
-            return _thread_local.mtcnn
+        def _get_detector() -> RetinaFace:
+            if not hasattr(_thread_local, "detector"):
+                # Determine execution providers based on device
+                if device == "cuda":
+                    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+                else:
+                    providers = ["CPUExecutionProvider"]
+                
+                _thread_local.detector = RetinaFace(providers=providers)
+            return _thread_local.detector
 
         # --- Unique destination path (must be called under _lock) ---
         def _claim_dest(src_path: Path) -> Path:
@@ -325,9 +341,25 @@ class FaceDetectionWorker(QThread):
 
             # 1. Detect faces
             try:
-                img     = Image.open(img_path).convert("RGB")
-                boxes, _ = _get_detector().detect(img)
-                face_count = len(boxes) if boxes is not None else 0
+                # RetinaFace expects BGR format from OpenCV
+                img_cv = cv2.imread(str(img_path))
+                if img_cv is None:
+                    raise ValueError(f"Failed to load image: {img_path.name}")
+                
+                # Calculate detection threshold based on confidence level
+                # confidence_level ranges from 0.0 (lenient) to 1.0 (strict)
+                # Map to detection threshold: 0.5–1.0 range (RetinaFace's natural range)
+                det_thresh = 0.5 + (self.confidence_level * 0.5)  # 0.5-1.0 range
+                
+                detector = _get_detector()
+                faces = detector.detect(img_cv)
+                
+                # Filter faces by confidence threshold
+                confident_faces = [
+                    f for f in faces
+                    if hasattr(f, "confidence") and f.confidence >= det_thresh
+                ]
+                face_count = len(confident_faces)
             except Exception as exc:
                 with _lock:
                     _errors[0] += 1
@@ -338,9 +370,14 @@ class FaceDetectionWorker(QThread):
                 self.stats_updated.emit(*stats)
                 return
 
-            # 2. Check minimum face threshold
-            if face_count < self.min_faces:
-                msg = f"[SKIP]   {img_path.name}  ({face_count} face(s) detected)"
+            # 2. Check face count range
+            in_range = face_count >= self.min_faces
+            if self.max_faces > 0:
+                in_range = in_range and face_count <= self.max_faces
+            
+            if not in_range:
+                max_faces_str = f"-{self.max_faces}" if self.max_faces > 0 else "+"
+                msg = f"[SKIP]   {img_path.name}  ({face_count} face(s), want {self.min_faces}{max_faces_str})"
                 logger.debug(msg)
                 self.log.emit(msg)
                 with _lock:

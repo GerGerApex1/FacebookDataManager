@@ -1,7 +1,6 @@
 torch
 torchvision
-facenet-pytorch
-mtcnn
+uniface[gpu]
 pyside6
 opencv-python
 Pillow
